@@ -32,19 +32,19 @@ function getClient(session: boolean) {
   if (session) {
     return aj.withRule(
       tokenBucket({
-        mode: "DRY_RUN",
-        refillRate: 30,
+        mode: "LIVE",
+        refillRate: 60,
         interval: 60,
-        capacity: 100,
+        capacity: 200,
       })
     );
   } else {
     return aj.withRule(
       tokenBucket({
-        mode: "DRY_RUN",
-        refillRate: 10,
+        mode: "LIVE",
+        refillRate: 20,
         interval: 60,
-        capacity: 100,
+        capacity: 200,
       })
     );
   }
