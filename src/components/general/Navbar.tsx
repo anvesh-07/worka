@@ -23,7 +23,7 @@ export async function Navbar() {
   return (
     <nav className="flex justify-between items-center py-5">
       <Link href="/" className="flex items-center gap-2">
-        <Image src="/Logo.png" alt="Job Marshal Logo" width={40} height={40} />
+        <Image src="/logo.png" alt="worka Logo" width={40} height={40} />
         <h1 className="text-2xl font-bold">
           <span className="text-primary">worka</span>
         </h1>
