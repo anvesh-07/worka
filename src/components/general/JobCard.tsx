@@ -24,27 +24,12 @@ interface iAppProps {
       location: string;
     };
   };
-  alreadyApplied?: boolean;
-  applicantCount?: number;
 }
 
-export function JobCard({ job, alreadyApplied, applicantCount }: iAppProps) {
+export function JobCard({ job }: iAppProps) {
   return (
     <Link href={`/job/${job.id}`}>
       <Card className="hover:shadow-lg transition-all duration-300 hover:border-primary relative">
-        {/* Top-right badges */}
-        <div className="absolute top-2 right-2 flex flex-col items-end gap-1 z-10">
-          {typeof applicantCount === "number" && (
-            <span className="bg-blue-100 text-blue-700 text-xs font-semibold px-2 py-1 rounded-full">
-              {applicantCount} Application{applicantCount === 1 ? "" : "s"}
-            </span>
-          )}
-          {alreadyApplied && (
-            <span className="bg-green-100 text-green-700 text-xs font-semibold px-2 py-1 rounded-full">
-              Applied
-            </span>
-          )}
-        </div>
         <CardHeader>
           <div className="flex flex-col md:flex-row gap-4">
             {job.company.logo ? (
@@ -66,19 +51,26 @@ export function JobCard({ job, alreadyApplied, applicantCount }: iAppProps) {
                 <p className="text-sm text-muted-foreground">
                   {job.company.name}
                 </p>
-                <span className="hidden md:inline text-muted-foreground">•</span>
+                <span className="hidden md:inline text-muted-foreground">
+                  •
+                </span>
                 <Badge className="rounded-full" variant="secondary">
                   {job.employmentType}
                 </Badge>
-                <span className="hidden md:inline text-muted-foreground">•</span>
+                <span className="hidden md:inline text-muted-foreground">
+                  •
+                </span>
                 <Badge className="rounded-full">{job.location}</Badge>
-                <span className="hidden md:inline text-muted-foreground">•</span>
+                <span className="hidden md:inline text-muted-foreground">
+                  •
+                </span>
                 <p className="text-sm text-muted-foreground">
                   {formatCurrency(job.salaryFrom)} -
                   {formatCurrency(job.salaryTo)}
                 </p>
               </div>
             </div>
+
             <div className="md:ml-auto">
               <div className="flex items-center gap-2">
                 <MapPin className="size-4" />

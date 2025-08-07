@@ -32,10 +32,9 @@ import { EmptyState } from "@/components/general/EmptyState";
 import { prisma } from "@/utils/db";
 import { requireUser } from "@/utils/requireUser";
 import { CopyLinkMenuItem } from "@/components/general/CopyLink";
-import { getApplicantCountForJob } from "@/app/actions";
 
-async function getJobsWithApplicantCounts(userId: string) {
-  const jobs = await prisma.jobPost.findMany({
+async function getJobs(userId: string) {
+  const data = await prisma.jobPost.findMany({
     where: {
       company: {
         userId: userId,
@@ -57,19 +56,13 @@ async function getJobsWithApplicantCounts(userId: string) {
       createdAt: "desc",
     },
   });
-  // Get applicant counts in parallel
-  const jobsWithCounts = await Promise.all(
-    jobs.map(async (job) => ({
-      ...job,
-      applicantCount: await getApplicantCountForJob(job.id),
-    }))
-  );
-  return jobsWithCounts;
+
+  return data;
 }
 
 const MyJobs = async () => {
   const session = await requireUser();
-  const data = await getJobsWithApplicantCounts(session.id as string);
+  const data = await getJobs(session.id as string);
 
   return (
     <>
@@ -127,11 +120,7 @@ const MyJobs = async () => {
                       {listing.status.charAt(0).toUpperCase() +
                         listing.status.slice(1).toLowerCase()}
                     </TableCell>
-                    <TableCell>
-                      <Link href={`/my-jobs/${listing.id}/applicants`} className="underline">
-                        {listing.applicantCount} Applicants
-                      </Link>
-                    </TableCell>
+                    <TableCell>5</TableCell>
                     <TableCell>
                       {listing.createdAt.toLocaleDateString("en-US", {
                         month: "long",
