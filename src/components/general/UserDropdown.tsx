@@ -79,8 +79,8 @@ export function UserDropdown({ email, name, image }: iAppProps) {
         <DropdownMenuItem asChild>
           <form
             action={async () => {
+              "use server";
               await signOut({ redirectTo: "/" });
-              router.refresh();
             }}
           >
             <button type="submit" className="w-full flex items-center gap-2">
