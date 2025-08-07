@@ -275,3 +275,80 @@ export async function unsaveJobPost(savedJobPostId: string) {
 
   revalidatePath(`/job/${data.jobId}`);
 }
+
+// Apply to a job (robust, type-safe)
+export async function applyToJob({ jobId, coverLetter, resume }: { jobId: string; coverLetter?: string; resume?: string }) {
+  const user = await requireUser();
+  // Always fetch userType from DB for safety
+  const dbUser = await prisma.user.findUnique({ where: { id: user.id }, select: { userType: true } });
+  if (dbUser?.userType !== "JOB_SEEKER") {
+    return { success: false, error: "Only job seekers can apply to jobs." };
+  }
+  // Prevent duplicate applications
+  const existing = await prisma.jobApplication.findUnique({
+    where: {
+      jobPostId_jobSeekerId: {
+        jobPostId: jobId,
+        jobSeekerId: user.id!,
+      },
+    },
+  });
+  if (existing) {
+    return { success: false, error: "You have already applied to this job." };
+  }
+  // Create application
+  await prisma.jobApplication.create({
+    data: {
+      jobPostId: jobId,
+      jobSeekerId: user.id!,
+      coverLetter: coverLetter ?? "",
+      resume: resume ?? "",
+    },
+  });
+  // Increment applications count
+  await prisma.jobPost.update({
+    where: { id: jobId },
+    data: { applications: { increment: 1 } },
+  });
+  return { success: true };
+}
+
+// Get all applicants for a job post (for company)
+export async function getApplicantsForJob(jobId: string) {
+  return prisma.jobApplication.findMany({
+    where: { jobPostId: jobId },
+    include: {
+      jobSeeker: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          JobSeeker: { select: { resume: true, about: true } },
+        },
+      },
+    },
+  });
+}
+
+// Get applicant count for a job post
+export async function getApplicantCountForJob(jobId: string) {
+  return prisma.jobApplication.count({ where: { jobPostId: jobId } });
+}
+
+// Get all jobs a user has applied to (for jobseeker, future use)
+export async function getJobsUserAppliedTo(userId: string) {
+  return prisma.jobApplication.findMany({
+    where: { jobSeekerId: userId },
+    include: {
+      jobPost: {
+        select: {
+          id: true,
+          jobTitle: true,
+          company: { select: { name: true, logo: true } },
+          location: true,
+          employmentType: true,
+        },
+      },
+    },
+  });
+}

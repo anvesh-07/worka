@@ -30,11 +30,12 @@ model User {
 
   stripeCustomerId String? @unique
 
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  Company      Company?
-  JobSeeker    JobSeeker?
-  SavedJobPost SavedJobPost[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  Company        Company?
+  JobSeeker      JobSeeker?
+  SavedJobPost   SavedJobPost[]
+  JobApplication JobApplication[]
 }
 
 model Account {
@@ -144,9 +145,10 @@ model JobPost {
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
   companyId String
 
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  SavedJobPost SavedJobPost[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  SavedJobPost   SavedJobPost[]
+  JobApplication JobApplication[]
 }
 
 enum JobPostStatus {
@@ -167,4 +169,26 @@ model SavedJobPost {
   updatedAt DateTime @updatedAt
 
   @@unique([userId, jobId])
+}
+
+model JobApplication {
+  id          String            @id @default(uuid())
+  jobPost     JobPost           @relation(fields: [jobPostId], references: [id], onDelete: Cascade)
+  jobPostId   String
+  jobSeeker   User              @relation(fields: [jobSeekerId], references: [id], onDelete: Cascade)
+  jobSeekerId String
+  coverLetter String?
+  resume      String?
+  status      ApplicationStatus @default(PENDING)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@unique([jobPostId, jobSeekerId])
+}
+
+enum ApplicationStatus {
+  PENDING
+  REVIEWED
+  ACCEPTED
+  REJECTED
 }

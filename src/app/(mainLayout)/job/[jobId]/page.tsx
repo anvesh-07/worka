@@ -1,3 +1,4 @@
+
 import { prisma } from "@/utils/db";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,6 @@ import { Heart } from "lucide-react";
 import Link from "next/link";
 import { auth } from "@/utils/auth";
 import {
-  GeneralSubmitButton,
   SaveJobButton,
 } from "@/components/general/SubmitButtons";
 import { getFlagEmoji } from "@/utils/countriesList";
@@ -21,6 +21,8 @@ import { saveJobPost, unsaveJobPost } from "@/app/actions";
 import arcjet, { detectBot } from "@/utils/arcjet";
 import { request, tokenBucket } from "@arcjet/next";
 import { JsonToHtml } from "@/components/general/JsonToHtml";
+import { ApplyNowForm } from "@/components/forms/ApplyNowForm";
+
 
 const aj = arcjet.withRule(
   detectBot({
@@ -51,7 +53,7 @@ function getClient(session: boolean) {
 }
 
 async function getJob(jobId: string, userId?: string) {
-  const [jobData, savedJob] = await Promise.all([
+  const [jobData, savedJob, alreadyApplied] = await Promise.all([
     prisma.jobPost.findUnique({
       where: {
         id: jobId,
@@ -60,12 +62,9 @@ async function getJob(jobId: string, userId?: string) {
       select: {
         jobTitle: true,
         jobDescription: true,
-
         location: true,
-
         employmentType: true,
         benefits: true,
-
         createdAt: true,
         listingDuration: true,
         company: {
@@ -80,16 +79,27 @@ async function getJob(jobId: string, userId?: string) {
     }),
     userId
       ? prisma.savedJobPost.findUnique({
-          where: {
-            userId_jobId: {
-              userId,
-              jobId,
-            },
+        where: {
+          userId_jobId: {
+            userId,
+            jobId,
           },
-          select: {
-            id: true,
+        },
+        select: {
+          id: true,
+        },
+      })
+      : null,
+    userId
+      ? prisma.jobApplication.findUnique({
+        where: {
+          jobPostId_jobSeekerId: {
+            jobPostId: jobId,
+            jobSeekerId: userId,
           },
-        })
+        },
+        select: { id: true },
+      })
       : null,
   ]);
 
@@ -100,10 +110,12 @@ async function getJob(jobId: string, userId?: string) {
   return {
     jobData,
     savedJob,
+    alreadyApplied: !!alreadyApplied,
   };
 }
 
 type Params = Promise<{ jobId: string }>;
+
 
 const JobIdPage = async ({ params }: { params: Params }) => {
   const { jobId } = await params;
@@ -116,7 +128,7 @@ const JobIdPage = async ({ params }: { params: Params }) => {
     throw new Error("forbidden");
   }
 
-  const { jobData, savedJob } = await getJob(jobId, session?.user?.id);
+  const { jobData, savedJob, alreadyApplied } = await getJob(jobId, session?.user?.id);
   const locationFlag = getFlagEmoji(jobData.location);
 
   return (
@@ -182,9 +194,8 @@ const JobIdPage = async ({ params }: { params: Params }) => {
                   <Badge
                     key={benefit.id}
                     variant={isOffered ? "default" : "outline"}
-                    className={`text-sm px-4 py-1.5 rounded-full ${
-                      !isOffered && " opacity-75 cursor-not-allowed"
-                    }`}
+                    className={`text-sm px-4 py-1.5 rounded-full ${!isOffered && " opacity-75 cursor-not-allowed"
+                      }`}
                   >
                     <span className="flex items-center gap-2">
                       {benefit.icon}
@@ -211,10 +222,7 @@ const JobIdPage = async ({ params }: { params: Params }) => {
                   worka. This helps us grow!
                 </p>
               </div>
-              <form>
-                <input type="hidden" name="jobId" value={jobId} />
-                <GeneralSubmitButton text="Apply now" />
-              </form>
+              <ApplyNowForm jobId={jobId} alreadyApplied={alreadyApplied} />
             </div>
           </Card>
 
@@ -231,7 +239,7 @@ const JobIdPage = async ({ params }: { params: Params }) => {
                   <span className="text-sm">
                     {new Date(
                       jobData.createdAt.getTime() +
-                        jobData.listingDuration * 24 * 60 * 60 * 1000
+                      jobData.listingDuration * 24 * 60 * 60 * 1000
                     ).toLocaleDateString("en-US", {
                       month: "long",
                       day: "numeric",
