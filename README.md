@@ -1,36 +1,128 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Worka - Job Board Platform
+
+A modern job board platform built with Next.js, featuring user authentication, job posting, file uploads, payments, and more.
+
+## Features
+
+- 🔐 **Authentication**: NextAuth with Google and GitHub OAuth
+- 💼 **Job Management**: Post, edit, and manage job listings
+- 📁 **File Uploads**: Upload company logos and documents with UploadThing
+- 💳 **Payments**: Stripe integration for job posting payments
+- 📧 **Email**: Resend integration for email notifications
+- ⚡ **Background Jobs**: Inngest for job processing
+- 🎨 **Modern UI**: Tailwind CSS with shadcn/ui components
+- 🗄️ **Database**: PostgreSQL with Prisma ORM
+
+## Tech Stack
+
+- **Framework**: Next.js 15 with App Router
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **UI Components**: shadcn/ui
+- **Database**: PostgreSQL
+- **ORM**: Prisma
+- **Authentication**: NextAuth.js
+- **File Upload**: UploadThing
+- **Payments**: Stripe
+- **Email**: Resend
+- **Background Jobs**: Inngest
+- **Package Manager**: pnpm
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+
+- pnpm
+- PostgreSQL database
+- Accounts for required services (see deployment guide)
+
+### Installation
+
+1. Clone the repository:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+git clone <your-repo-url>
+cd worka
+```
+
+2. Install dependencies:
+
+```bash
+pnpm install
+```
+
+3. Set up environment variables:
+
+```bash
+cp .env.example .env.local
+```
+
+4. Configure your environment variables (see `ENVIRONMENT_VARIABLES.md`)
+
+5. Set up the database:
+
+```bash
+pnpm prisma generate
+pnpm prisma db push
+```
+
+6. Run the development server:
+
+```bash
 pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Deployment
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Quick Deploy to Vercel
 
-## Learn More
+1. **Prerequisites**: Set up all required services (see `DEPLOYMENT_GUIDE.md`)
+2. **Deploy**: Run the deployment script:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+chmod +x scripts/deploy.sh
+./scripts/deploy.sh
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Manual Deployment
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+For detailed deployment instructions, see:
 
-## Deploy on Vercel
+- [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) - Complete deployment guide
+- [ENVIRONMENT_VARIABLES.md](./ENVIRONMENT_VARIABLES.md) - Environment variables reference
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Project Structure
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+worka/
+├── src/
+│   ├── app/                 # Next.js App Router
+│   │   ├── (mainLayout)/    # Main layout routes
+│   │   ├── api/            # API routes
+│   │   └── ...
+│   ├── components/         # React components
+│   │   ├── forms/          # Form components
+│   │   ├── general/        # General components
+│   │   ├── ui/             # shadcn/ui components
+│   │   └── ...
+│   ├── utils/              # Utility functions
+│   └── ...
+├── prisma/                 # Database schema
+├── public/                 # Static assets
+└── ...
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License.
