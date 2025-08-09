@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { companySchema, jobSchema, jobSeekerSchema } from "@/utils/zodSchemas";
+import { applicationSchema, companySchema, jobSchema, jobSeekerSchema } from "@/utils/zodSchemas";
 import { requireUser } from "@/utils/requireUser";
 import { prisma } from "@/utils/db";
 import arcjet, { detectBot, shield } from "@/utils/arcjet";
@@ -274,4 +274,43 @@ export async function unsaveJobPost(savedJobPostId: string) {
   });
 
   revalidatePath(`/job/${data.jobId}`);
+}
+
+
+export async function applyForJob(
+  data: z.infer<typeof applicationSchema>
+) {
+  const user = await requireUser();
+
+  const jobSeeker = await prisma.jobSeeker.findUnique({
+    where: {
+      userId: user.id,
+    },
+  });
+
+  if (!jobSeeker) {
+    throw new Error("User is not a job seeker.");
+  }
+
+  const skillsArray =
+    data.skills
+      ?.split(",")
+      .map((skill) => skill.trim())
+      .filter((skill) => skill.length > 0) || [];
+
+  const application = await prisma.application.create({
+    data: {
+      jobId: data.jobId,
+      userId: user.id as string,
+      resume: data.resume,
+      coverLetter: data.coverLetter,
+      expectedSalary: data.expectedSalary,
+      noticePeriod: data.noticePeriod as any,
+      relocation: data.relocation,
+      skills: skillsArray,
+    },
+  });
+
+  revalidatePath(`/job/${data.jobId}`);
+  return application;
 }

@@ -23,12 +23,11 @@ model User {
   sessions      Session[]
   // Optional for WebAuthn support
   Authenticator Authenticator[]
+  applications  Application[] // New relation to applications
 
-  onboardingCompleted Boolean @default(false)
-
-  userType UserType?
-
-  stripeCustomerId String? @unique
+  onboardingCompleted Boolean   @default(false)
+  userType            UserType?
+  stripeCustomerId    String?   @unique
 
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
@@ -98,8 +97,7 @@ enum UserType {
 }
 
 model Company {
-  id String @id @default(uuid())
-
+  id       String  @id @default(uuid())
   name     String
   location String
   logo     String
@@ -127,8 +125,7 @@ model JobSeeker {
 }
 
 model JobPost {
-  id String @id @default(uuid())
-
+  id              String        @id @default(uuid())
   jobTitle        String
   employmentType  String
   location        String
@@ -137,12 +134,10 @@ model JobPost {
   jobDescription  String
   listingDuration Int
   benefits        String[]
-
-  status       JobPostStatus @default(DRAFT)
-  applications Int           @default(0)
-
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  companyId String
+  status          JobPostStatus @default(DRAFT)
+  applications    Application[] // Updated to relation
+  company         Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId       String
 
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
@@ -167,4 +162,39 @@ model SavedJobPost {
   updatedAt DateTime @updatedAt
 
   @@unique([userId, jobId])
+}
+
+model Application {
+  id             String            @id @default(cuid())
+  jobId          String
+  userId         String
+  resume         String?
+  coverLetter    String?
+  expectedSalary Int
+  noticePeriod   NoticePeriod
+  relocation     Boolean           @default(false)
+  skills         String[]
+  status         ApplicationStatus @default(SUBMITTED)
+  appliedAt      DateTime          @default(now())
+
+  job  JobPost @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, jobId])
+}
+
+enum NoticePeriod {
+  IMMEDIATE
+  FIFTEEN_DAYS
+  ONE_MONTH
+  TWO_MONTHS
+  MORE_THAN_TWO_MONTHS
+}
+
+enum ApplicationStatus {
+  SUBMITTED
+  VIEWED
+  INTERVIEWING
+  OFFERED
+  REJECTED
 }

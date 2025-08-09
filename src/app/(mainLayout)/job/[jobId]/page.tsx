@@ -2,25 +2,20 @@ import { prisma } from "@/utils/db";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-
 import { notFound } from "next/navigation";
 import React from "react";
-
 import { benefits } from "@/utils/listOfBenefits";
 import Image from "next/image";
 import { Heart } from "lucide-react";
-
 import Link from "next/link";
 import { auth } from "@/utils/auth";
-import {
-  GeneralSubmitButton,
-  SaveJobButton,
-} from "@/components/general/SubmitButtons";
+import { SaveJobButton } from "@/components/general/SubmitButtons";
 import { getFlagEmoji } from "@/utils/countriesList";
 import { saveJobPost, unsaveJobPost } from "@/app/actions";
 import arcjet, { detectBot } from "@/utils/arcjet";
 import { request, tokenBucket } from "@arcjet/next";
 import { JsonToHtml } from "@/components/general/JsonToHtml";
+import { ApplyDialog } from "@/components/general/ApplyDialog";
 
 const aj = arcjet.withRule(
   detectBot({
@@ -28,6 +23,7 @@ const aj = arcjet.withRule(
     allow: ["CATEGORY:SEARCH_ENGINE", "CATEGORY:PREVIEW"],
   })
 );
+
 function getClient(session: boolean) {
   if (session) {
     return aj.withRule(
@@ -51,7 +47,7 @@ function getClient(session: boolean) {
 }
 
 async function getJob(jobId: string, userId?: string) {
-  const [jobData, savedJob] = await Promise.all([
+  const [jobData, savedJob, jobSeeker, application] = await Promise.all([
     prisma.jobPost.findUnique({
       where: {
         id: jobId,
@@ -60,12 +56,9 @@ async function getJob(jobId: string, userId?: string) {
       select: {
         jobTitle: true,
         jobDescription: true,
-
         location: true,
-
         employmentType: true,
         benefits: true,
-
         createdAt: true,
         listingDuration: true,
         company: {
@@ -80,16 +73,39 @@ async function getJob(jobId: string, userId?: string) {
     }),
     userId
       ? prisma.savedJobPost.findUnique({
-          where: {
-            userId_jobId: {
-              userId,
-              jobId,
-            },
+        where: {
+          userId_jobId: {
+            userId,
+            jobId,
           },
-          select: {
-            id: true,
+        },
+        select: {
+          id: true,
+        },
+      })
+      : null,
+    userId
+      ? prisma.jobSeeker.findUnique({
+        where: {
+          userId,
+        },
+        select: {
+          resume: true,
+        },
+      })
+      : null,
+    userId
+      ? prisma.application.findUnique({
+        where: {
+          userId_jobId: {
+            userId,
+            jobId,
           },
-        })
+        },
+        select: {
+          status: true,
+        },
+      })
       : null,
   ]);
 
@@ -100,6 +116,8 @@ async function getJob(jobId: string, userId?: string) {
   return {
     jobData,
     savedJob,
+    jobSeeker,
+    application,
   };
 }
 
@@ -116,7 +134,10 @@ const JobIdPage = async ({ params }: { params: Params }) => {
     throw new Error("forbidden");
   }
 
-  const { jobData, savedJob } = await getJob(jobId, session?.user?.id);
+  const { jobData, savedJob, jobSeeker, application } = await getJob(
+    jobId,
+    session?.user?.id
+  );
   const locationFlag = getFlagEmoji(jobData.location);
 
   return (
@@ -182,9 +203,8 @@ const JobIdPage = async ({ params }: { params: Params }) => {
                   <Badge
                     key={benefit.id}
                     variant={isOffered ? "default" : "outline"}
-                    className={`text-sm px-4 py-1.5 rounded-full ${
-                      !isOffered && " opacity-75 cursor-not-allowed"
-                    }`}
+                    className={`text-sm px-4 py-1.5 rounded-full ${!isOffered && " opacity-75 cursor-not-allowed"
+                      }`}
                   >
                     <span className="flex items-center gap-2">
                       {benefit.icon}
@@ -211,10 +231,26 @@ const JobIdPage = async ({ params }: { params: Params }) => {
                   worka. This helps us grow!
                 </p>
               </div>
-              <form>
-                <input type="hidden" name="jobId" value={jobId} />
-                <GeneralSubmitButton text="Apply now" />
-              </form>
+              {session?.user ? (
+                application ? (
+                  <div className="flex flex-col items-center justify-center space-y-2 rounded-md border border-dashed p-6 text-center">
+                    <p className="font-semibold">
+                      You have applied for this job.
+                    </p>
+                    <Badge>Status: {application.status}</Badge>
+                  </div>
+                ) : (
+                  <ApplyDialog
+                    jobId={jobId}
+                    jobTitle={jobData.jobTitle}
+                    userResume={jobSeeker?.resume || ""}
+                  />
+                )
+              ) : (
+                <Button asChild className="w-full">
+                  <Link href="/login">Login to Apply</Link>
+                </Button>
+              )}
             </div>
           </Card>
 
@@ -231,7 +267,7 @@ const JobIdPage = async ({ params }: { params: Params }) => {
                   <span className="text-sm">
                     {new Date(
                       jobData.createdAt.getTime() +
-                        jobData.listingDuration * 24 * 60 * 60 * 1000
+                      jobData.listingDuration * 24 * 60 * 60 * 1000
                     ).toLocaleDateString("en-US", {
                       month: "long",
                       day: "numeric",
@@ -288,9 +324,6 @@ const JobIdPage = async ({ params }: { params: Params }) => {
                   </p>
                 </div>
               </div>
-              {/*  <Button variant="outline" className="w-full">
-                View company profile
-              </Button> */}
             </div>
           </Card>
         </div>

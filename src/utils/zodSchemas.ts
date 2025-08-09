@@ -33,3 +33,14 @@ export const jobSchema = z.object({
   companyDescription: z.string().min(1, "Company description is required"),
   listingDuration: z.number().min(1, "Listing duration is required"),
 });
+
+
+export const applicationSchema = z.object({
+  resume: z.string().min(1, "Please upload a resume"),
+  coverLetter: z.string().min(10, "Please provide a cover letter"),
+  jobId: z.string(),
+  expectedSalary: z.number().min(1, "Expected salary is required"),
+  noticePeriod: z.string().min(1, "Please select a notice period"),
+  relocation: z.boolean().default(false),
+  skills: z.string().optional(),
+});

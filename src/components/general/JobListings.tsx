@@ -3,12 +3,15 @@ import { EmptyState } from "./EmptyState";
 import { PaginationComponent } from "./PaginationComponent";
 import { JobCard } from "./JobCard";
 import { JobPostStatus } from "@prisma/client";
+import { auth } from "@/utils/auth";
+
 
 async function getJobs(
   page: number = 1,
   pageSize: number = 10,
   jobTypes: string[] = [],
-  location: string = ""
+  location: string = "",
+  userId?: string
 ) {
   const skip = (page - 1) * pageSize;
 
@@ -21,11 +24,11 @@ async function getJobs(
     }),
     ...(location &&
       location !== "worldwide" && {
-        location: location,
-      }),
+      location: location,
+    }),
   };
 
-  const [data, totalCount] = await Promise.all([
+  const [jobData, totalCount, applications] = await Promise.all([
     prisma.jobPost.findMany({
       skip,
       take: pageSize,
@@ -46,18 +49,44 @@ async function getJobs(
             about: true,
           },
         },
+        // --- CHANGE START: Include a count of related applications ---
+        _count: {
+          select: { applications: true },
+        },
+        // --- CHANGE END ---
       },
       orderBy: {
         createdAt: "desc",
       },
     }),
     prisma.jobPost.count({ where }),
+    userId
+      ? prisma.application.findMany({
+        where: {
+          userId,
+        },
+        select: {
+          jobId: true,
+        },
+      })
+      : Promise.resolve([]),
   ]);
 
+  const appliedJobIds = new Set(applications.map((app: any) => app.jobId));
+
+  // --- CHANGE START: Process the job data to add applicantCount ---
+  const jobs = jobData.map(({ _count, ...job }) => ({
+    ...job,
+    applicantCount: _count.applications,
+  }));
+  // --- CHANGE END ---
+
+
   return {
-    jobs: data,
+    jobs, // Return the processed jobs with the applicant count
     totalPages: Math.ceil(totalCount / pageSize),
     currentPage: page,
+    appliedJobIds,
   };
 }
 
@@ -70,19 +99,28 @@ export default async function JobListings({
   jobTypes: string[];
   location: string;
 }) {
+  const session = await auth();
   const {
-    jobs,
+    jobs, // This `jobs` array now contains objects with `applicantCount`
     totalPages,
     currentPage: page,
-  } = await getJobs(currentPage, 5, jobTypes, location);
+    appliedJobIds,
+  } = await getJobs(currentPage, 5, jobTypes, location, session?.user?.id);
 
   return (
     <>
       {jobs.length > 0 ? (
         <div className="flex flex-col gap-6">
-          {jobs.map((job, index) => (
-            <JobCard job={job} key={index} />
+          {/* --- CHANGE START: Pass applicantCount to JobCard --- */}
+          {jobs.map((job: any, index) => (
+            <JobCard
+              job={job}
+              key={index}
+              alreadyApplied={appliedJobIds.has(job.id)}
+              applicantCount={job.applicantCount}
+            />
           ))}
+          {/* --- CHANGE END --- */}
         </div>
       ) : (
         <EmptyState
