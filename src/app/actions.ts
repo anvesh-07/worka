@@ -11,6 +11,7 @@ import { request } from "@arcjet/next";
 import { stripe } from "@/utils/stripe";
 import { jobListingDurationPricing } from "@/utils/pricingTiers";
 import { inngest } from "@/utils/inngest/client";
+import { ApplicationStatus } from "@prisma/client";
 
 const aj = arcjet
   .withRule(
@@ -147,6 +148,8 @@ export async function createJob(data: z.infer<typeof jobSchema>) {
       salaryTo: validatedData.salaryTo,
       listingDuration: validatedData.listingDuration,
       benefits: validatedData.benefits,
+      createdById: user.id as string,
+      updatedById: user.id as string,
     },
   });
 
@@ -197,8 +200,7 @@ export async function createJob(data: z.infer<typeof jobSchema>) {
   return redirect(session.url as string);
 }
 
-export async function updateJobPost(
-  data: z.infer<typeof jobSchema>,
+export async function updateJobPost(data: z.infer<typeof jobSchema>,
   jobId: string
 ) {
   const user = await requireUser();
@@ -221,6 +223,7 @@ export async function updateJobPost(
       salaryTo: validatedData.salaryTo,
       listingDuration: validatedData.listingDuration,
       benefits: validatedData.benefits,
+      updatedById: user.id as string,
     },
   });
 
@@ -313,4 +316,39 @@ export async function applyForJob(
 
   revalidatePath(`/job/${data.jobId}`);
   return application;
+}
+
+
+export async function updateApplicationStatus(
+  applicationId: string,
+  jobId: string,
+  status: ApplicationStatus
+) {
+  const user = await requireUser();
+
+  // First, verify the user owns the job post associated with the application
+  const jobPost = await prisma.jobPost.findFirst({
+    where: {
+      id: jobId,
+      company: {
+        userId: user.id as string,
+      },
+    },
+  });
+
+  if (!jobPost) {
+    throw new Error("Unauthorized or Job Post not found");
+  }
+
+  // If authorized, update the application status
+  await prisma.application.update({
+    where: {
+      id: applicationId,
+    },
+    data: {
+      status: status,
+    },
+  });
+
+  revalidatePath(`/my-jobs/${jobId}/applications`);
 }

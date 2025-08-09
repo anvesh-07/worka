@@ -29,6 +29,9 @@ model User {
   userType            UserType?
   stripeCustomerId    String?   @unique
 
+  createdJobPosts JobPost[] @relation("CreatedBy")
+  updatedJobPosts JobPost[] @relation("UpdatedBy")
+
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   Company      Company?
@@ -135,9 +138,19 @@ model JobPost {
   listingDuration Int
   benefits        String[]
   status          JobPostStatus @default(DRAFT)
-  applications    Application[] // Updated to relation
+  applications    Application[]
   company         Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   companyId       String
+
+  // --- CHANGES START ---
+  // Add relation to the user who created the job post
+  createdBy   User   @relation("CreatedBy", fields: [createdById], references: [id])
+  createdById String
+
+  // Add relation to the user who last updated the job post
+  updatedBy   User   @relation("UpdatedBy", fields: [updatedById], references: [id])
+  updatedById String
+  // --- CHANGES END ---
 
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt

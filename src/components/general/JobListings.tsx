@@ -118,6 +118,7 @@ export default async function JobListings({
               key={index}
               alreadyApplied={appliedJobIds.has(job.id)}
               applicantCount={job.applicantCount}
+              isJobOwner={session?.user?.id === job.company.userId}
             />
           ))}
           {/* --- CHANGE END --- */}
