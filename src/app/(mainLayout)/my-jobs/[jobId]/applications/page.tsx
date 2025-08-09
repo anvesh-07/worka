@@ -65,13 +65,12 @@ async function getJobWithApplicants(jobId: string, userId: string) {
   return job;
 }
 
-export default async function JobApplicantsPage({
-  params,
-}: {
-  params: { jobId: string };
-}) {
+type Params = Promise<{ jobId: string }>;
+
+export default async function JobApplicantsPage({ params }: { params: Params }) {
+  const { jobId } = await params;
   const user = await requireUser();
-  const job = await getJobWithApplicants(params.jobId, user.id as string);
+  const job = await getJobWithApplicants(jobId, user.id as string);
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
