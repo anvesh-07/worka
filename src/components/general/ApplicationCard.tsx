@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 "use client";
 
 import {
@@ -14,10 +16,7 @@ import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/utils/formatCurrency";
 import {
   DollarSign,
-  Briefcase,
-  ExternalLink,
   Calendar,
-  Sparkles,
   MapPin,
   MoreVertical,
   ChevronDown,
@@ -74,6 +73,8 @@ export function ApplicationCard({ application }: { application: any }) {
       setCurrentStatus(newStatus);
       toast.success("Status updated successfully");
     } catch (error) {
+      console.error("Error updating status:", error);
+
       toast.error("Failed to update status");
     }
   };

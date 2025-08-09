@@ -1,13 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { prisma } from "@/utils/db";
 import { requireUser } from "@/utils/requireUser";
 import { notFound, redirect } from "next/navigation";
-// import { ApplicationCard } from "@/components/general/ApplicationCard";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+
 import { EmptyState } from "@/components/general/EmptyState";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";

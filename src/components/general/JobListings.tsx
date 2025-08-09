@@ -1,3 +1,5 @@
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { prisma } from "@/utils/db";
 import { EmptyState } from "./EmptyState";
 import { PaginationComponent } from "./PaginationComponent";
